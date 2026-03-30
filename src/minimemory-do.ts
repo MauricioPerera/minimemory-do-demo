@@ -287,11 +287,76 @@ export class MinimemoryDO implements DurableObject {
         });
       }
 
+      // POST /benchmark — run benchmark entirely inside DO (no fetch overhead)
+      // { docs: 1000, dims: 64, index: "flat"|"hnsw", quant: "none"|"int3"|"int8"|"binary", k: 10 }
+      if (method === "POST" && path === "/benchmark") {
+        const body = (await request.json()) as any;
+        const numDocs = body.docs || 500;
+        const dims = body.dims || 64;
+        const indexType = body.index || "flat";
+        const quant = body.quant || "none";
+        const k = body.k || 10;
+
+        // Create a fresh DB with requested config
+        const benchDb = minimemory.WasmVectorDB.new_with_config(
+          dims, "cosine", indexType, quant, 16, 200,
+        );
+
+        // Generate and insert vectors
+        const insertStart = performance.now();
+        for (let i = 0; i < numDocs; i++) {
+          const vec = new Float32Array(dims);
+          for (let d = 0; d < dims; d++) {
+            vec[d] = Math.sin(i * 0.1 + d * 0.3);
+          }
+          benchDb.insert_with_metadata(
+            `doc-${i}`,
+            vec,
+            JSON.stringify({ title: `Doc ${i}`, cat: ["tech", "sci", "art", "news"][i % 4], pri: i % 10 }),
+          );
+        }
+        const insertMs = +(performance.now() - insertStart).toFixed(3);
+
+        // Search
+        const queryVec = new Float32Array(dims);
+        for (let d = 0; d < dims; d++) queryVec[d] = Math.sin(42 * 0.1 + d * 0.3);
+
+        // Warm up
+        benchDb.search(queryVec, k);
+
+        // Measure search (average of 5 runs)
+        let searchTotal = 0;
+        for (let r = 0; r < 5; r++) {
+          const t = performance.now();
+          benchDb.search(queryVec, k);
+          searchTotal += performance.now() - t;
+        }
+        const searchMs = +(searchTotal / 5).toFixed(3);
+
+        // Single search for results
+        const searchResults = JSON.parse(benchDb.search(queryVec, k));
+
+        // Memory estimate
+        const memEstimate = benchDb.len() * dims * 4; // f32 bytes (unquantized)
+
+        benchDb.free();
+
+        return json({
+          config: { docs: numDocs, dims, index: indexType, quant, k },
+          insert_ms: insertMs,
+          search_avg_ms: searchMs,
+          search_top3: searchResults.slice(0, 3),
+          docs_inserted: numDocs,
+          memory_estimate_kb: +(memEstimate / 1024).toFixed(1),
+          ops_per_sec: +(1000 / searchMs).toFixed(0),
+        });
+      }
+
       return json({
         error: "not found",
         routes: [
           "POST /init", "POST /insert", "POST /search", "POST /keyword",
-          "POST /bulk-insert", "POST /checkpoint",
+          "POST /bulk-insert", "POST /checkpoint", "POST /benchmark",
           "GET /get/:id", "DELETE /delete/:id", "GET /stats",
         ],
       }, 404);
