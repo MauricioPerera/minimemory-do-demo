@@ -1,0 +1,33 @@
+### Health check
+GET http://localhost:8787/health
+
+### Insert a document
+POST http://localhost:8787/db/test/insert
+Content-Type: application/json
+
+{
+  "id": "doc-1",
+  "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4],
+  "metadata": { "title": "Test document", "category": "tech" }
+}
+
+### Search
+POST http://localhost:8787/db/test/search
+Content-Type: application/json
+
+{
+  "vector": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.1, 0.2, 0.3, 0.4],
+  "k": 5
+}
+
+### Get stats
+GET http://localhost:8787/db/test/stats
+
+### Get by ID
+GET http://localhost:8787/db/test/get/doc-1
+
+### Run benchmark (minimemory vs D1)
+POST http://localhost:8787/benchmark/run
+Content-Type: application/json
+
+{}

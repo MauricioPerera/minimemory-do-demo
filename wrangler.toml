@@ -1,0 +1,24 @@
+name = "minimemory-do-demo"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[rules]]
+type = "CompiledWasm"
+globs = ["**/*.wasm"]
+fallthrough = true
+
+[durable_objects]
+bindings = [
+  { name = "MINIMEMORY", class_name = "MinimemoryDO" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["MinimemoryDO"]
+
+# D1 for benchmark comparison
+[[d1_databases]]
+binding = "BENCHMARK_DB"
+database_name = "minimemory-bench"
+database_id = "5f6fc77c-96ea-47c3-871d-4cd7c261bdc1"
